@@ -1,0 +1,111 @@
+---
+title: "Toyota Corolla Price Analysis"
+author: "Praharsha Gangadhara"
+output: html_document
+---
+
+# Introduction
+
+This analysis explores the relationship between various car attributes and the price of a Toyota Corolla dataset. The main objectives are: 1. Analyze the influence of car age on price. 2. Compare car prices based on fuel type. 3. Build linear regression models to predict car prices.
+
+# Data Loading and Exploration
+
+```{r}
+# Load necessary libraries
+library(tidyverse)
+library(dplyr)
+library(car)
+
+# Load the dataset
+toyota_data <- read.csv("C:/Users/praha/Downloads/ToyotaCorolla.csv", encoding = "ISO-8859-1")
+
+# Explore the dataset
+str(toyota_data)
+summary(toyota_data)
+```
+
+```{r}
+# Check for missing values
+sum(is.na(toyota_data))
+```
+
+```{r}
+#Question 1: Does the Age of the Car Influence its Price?
+# Scatter plot to explore the relationship between Age and Price
+ggplot(toyota_data, aes(x = Age_08_04, y = Price)) +
+  geom_point() +
+  ggtitle("Relationship between Car Age and Price") +
+  xlab("Age of the Car (years)") +
+  ylab("Price (EUR)")
+```
+
+```{r}
+#Question 2: How Does the Type of Fuel Affect the Price of the Car?
+# Group by Fuel_Type and calculate the average price for each fuel type
+fuel_price_comparison <- toyota_data %>%
+  group_by(Fuel_Type) %>%
+  summarise(Average_Price = mean(Price, na.rm = TRUE))
+
+# View the comparison
+print(fuel_price_comparison)
+
+# Bar plot of the average price by fuel type
+ggplot(fuel_price_comparison, aes(x = Fuel_Type, y = Average_Price, fill = Fuel_Type)) +
+  geom_bar(stat = "identity") +
+  ggtitle("Average Price by Fuel Type") +
+  xlab("Fuel Type") +
+  ylab("Average Price (EUR)")
+```
+
+```{r}
+# Create the linear regression model
+model <- lm(Price ~ Age_08_04 + KM + HP + Weight + Fuel_Type, data = toyota_data)
+
+# Summary of the model
+summary(model)
+```
+
+```{r}
+# Check the residuals
+residuals <- resid(model)
+predicted_values <- predict(model)
+
+# Residual vs Predicted values plot
+ggplot() +
+  geom_point(aes(x = predicted_values, y = residuals)) +
+  geom_hline(yintercept = 0, color = "red", linetype = "dashed") +
+  ggtitle("Residuals vs Predicted Values") +
+  xlab("Predicted Price (EUR)") +
+  ylab("Residuals")
+
+# Histogram of residuals
+ggplot(data.frame(residuals), aes(x = residuals)) +
+  geom_histogram(aes(y = ..density..), bins = 30, fill = "blue", color = "black") +
+  geom_density(alpha = 0.2, fill = "red") +
+  ggtitle("Histogram of Residuals") +
+  xlab("Residuals") +
+  ylab("Density")
+
+# Q-Q plot for normality of residuals
+qqnorm(residuals)
+qqline(residuals, col = "red")
+```
+
+```{r}
+# Calculate VIF
+vif(model)
+```
+
+```{r}
+# Adding polynomial terms for Age and KM (quadratic terms)
+model_refined <- lm(Price ~ poly(Age_08_04, 2) + poly(KM, 2) + HP + Weight + Fuel_Type, data = toyota_data)
+
+# Summary of the refined model
+summary(model_refined)
+
+# Adding interaction terms between Age and KM
+model_interaction <- lm(Price ~ Age_08_04 * KM + HP + Weight + Fuel_Type, data = toyota_data)
+
+# Summary of the model with interaction terms
+summary(model_interaction)
+```
